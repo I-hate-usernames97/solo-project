@@ -88,7 +88,6 @@ public class AuthenticationController {
         ApiResponse response = new ApiResponse("Registration successful" );
         return ResponseEntity.ok(response);
     }
-
     @PostMapping("/login")
     @ResponseBody
     public ResponseEntity<ApiResponse> processLoginForm(@RequestBody @Valid LoginFormDTO loginFormDTO, HttpServletRequest request) {
@@ -117,13 +116,15 @@ public class AuthenticationController {
                 .signWith(key)
                 .compact();
 
+        // Set the Authorization header
         HttpHeaders headers = new HttpHeaders();
         headers.set("Authorization", "Bearer " + token);
 
+        System.out.print(headers);
         ApiResponse response = new ApiResponse("Login successful");
         return ResponseEntity.ok().headers(headers).body(response);
-
     }
+
 
 
     @GetMapping("/logout")
