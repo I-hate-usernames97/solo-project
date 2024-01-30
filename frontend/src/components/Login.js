@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { useNavigate } from 'react-router-dom';
 import axios from "axios";
 
 function Login() {
@@ -9,22 +10,42 @@ function Login() {
 
     const [registrationMessage, setRegistrationMessage] = useState('');
 
-    const handleSubmit = async (e) => {
-  e.preventDefault();
-  try {
-    const response = await axios.post(`http://localhost:8080/login`,
-    formData);
+    const navigate = useNavigate();
 
-    console.log('Registration successful:', response.data);
+
+const handleSubmit = async (e) => {
+  e.preventDefault();
+
+  console.log('Form Data:', formData);
+
+  try {
+    const response = await axios.post(
+      `http://localhost:8080/login`,
+      {
+        username: formData.username,
+        password: formData.password,
+      },
+      {
+        withCredentials: true,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+
+    console.log('Login successful:', response.data);
     setRegistrationMessage(response.data);
-    
-    const authToken = response.data.token;
-    localStorage.setItem('authToken', authToken);
-    console.log('Authorization Token:', authToken);
+
+    // Redirect to the home page
+    navigate('/');
 
   } catch (error) {
-    console.error('Registration error:', error.response.data);
-    setRegistrationMessage(error.response.data);
+    console.error('Login error:', error);
+
+    // Display user-friendly error message to the user
+    setRegistrationMessage(
+      error.response ? error.response.data : 'An error occurred during login'
+    );
   }
 };
 
@@ -57,7 +78,7 @@ function Login() {
 
       <a href='/register'>dont have an account?</a>
 
-      <p>{registrationMessage.error}</p>
+      <p>{}</p>
     </div>
   )
 }
