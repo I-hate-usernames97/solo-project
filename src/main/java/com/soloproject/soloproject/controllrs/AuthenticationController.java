@@ -6,25 +6,21 @@ import com.soloproject.soloproject.controllrs.models.dto.LoginFormDTO;
 import com.soloproject.soloproject.controllrs.models.dto.RegisterFormDTO;
 import com.soloproject.soloproject.data.UserRepository;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import javax.validation.Valid;
 import java.security.Key;
-import java.util.Date;
+import java.sql.Date;
 import java.util.Optional;
 
-@Controller
+@RestController
+@CrossOrigin(origins = "http://localhost:3000", allowedHeaders = "*", methods = {RequestMethod.POST})
 public class AuthenticationController {
 
     @Autowired
@@ -53,77 +49,76 @@ public class AuthenticationController {
 
     @PostMapping("/register")
     @ResponseBody
-    public ResponseEntity<ApiResponse> processRegistrationForm(@RequestBody @Valid RegisterFormDTO registerFormDTO, HttpServletRequest request) {
+    public ResponseEntity<ApiResponse> processRegistrationForm(@RequestBody @Valid RegisterFormDTO registerForm, HttpServletRequest request) {
 
-
-        User existingUser = userRepository.findByUsername(registerFormDTO.getUsername());
-
+        // Check if a user with the username already exists
+        User existingUser = userRepository.findByUsername(registerForm.getUsername());
         if (existingUser != null) {
-
             ApiResponse response = new ApiResponse("A user with that username already exists");
             return ResponseEntity.badRequest().body(response);
         }
 
-        User existingEmail = userRepository.findByEmail(registerFormDTO.getEmail());
-
-        if(existingEmail != null){
-
-            ApiResponse response = new ApiResponse("This email is already in uses");
+        // Check if a user with the email already exists
+        User existingEmail = userRepository.findByEmail(registerForm.getEmail());
+        if (existingEmail != null) {
+            ApiResponse response = new ApiResponse("This email is already in use");
             return ResponseEntity.badRequest().body(response);
         }
 
-        String password = registerFormDTO.getPassword();
-        String verifyPassword = registerFormDTO.getVerifyPassword();
+        // Check if passwords match
+        String password = registerForm.getPassword();
+        String verifyPassword = registerForm.getVerifyPassword();
         if (!password.equals(verifyPassword)) {
-
             ApiResponse response = new ApiResponse("Passwords do not match");
             return ResponseEntity.badRequest().body(response);
-
         }
 
-        User newUser = new User(registerFormDTO.getUsername(), registerFormDTO.getEmail(), registerFormDTO.getPassword());
+        // saves the user
+        User newUser = new User(registerForm.getUsername(), registerForm.getEmail(), registerForm.getPassword());
         userRepository.save(newUser);
         setUserInSession(request.getSession(), newUser);
 
         ApiResponse response = new ApiResponse("Registration successful" );
         return ResponseEntity.ok(response);
+
     }
+
+
+
     @PostMapping("/login")
     @ResponseBody
     public ResponseEntity<ApiResponse> processLoginForm(@RequestBody @Valid LoginFormDTO loginFormDTO, HttpServletRequest request) {
+        User user = userRepository.findByUsername(loginFormDTO.getUsername());
 
-        User theUser = userRepository.findByUsername(loginFormDTO.getUsername());
-
-        if (theUser == null) {
+        if (user == null) {
             ApiResponse response = new ApiResponse("The given username does not exist");
-            return ResponseEntity.badRequest().body(response);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
         }
 
         String password = loginFormDTO.getPassword();
 
-        if (!theUser.isMatchingPassword(password)) {
+        if (!user.isMatchingPassword(password)) {
             ApiResponse response = new ApiResponse("Invalid password");
-            return ResponseEntity.badRequest().body(response);
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
         }
 
-        // Generate JWT token
-
+        // Generate JWT token with expiration time (e.g., 1 hour)
         String secretKey = System.getenv("MY_APP_SECRET_KEY");
         Key key = Keys.hmacShaKeyFor(secretKey.getBytes());
 
         String token = Jwts.builder()
-                .setSubject(theUser.getUsername()) // Use the actual user identifier here
+                .setSubject(user.getUsername())
+                .setExpiration(new Date(System.currentTimeMillis() + 3600000)) // 1 hour
                 .signWith(key)
                 .compact();
 
-        // Set the Authorization header
-        HttpHeaders headers = new HttpHeaders();
-        headers.set("Authorization", "Bearer " + token);
+        // Log statement for demonstration purposes
+        System.out.println("Generated token: " + token);
 
-        System.out.print(headers);
         ApiResponse response = new ApiResponse("Login successful");
-        return ResponseEntity.ok().headers(headers).body(response);
+        return ResponseEntity.ok().header("Authorization", "Bearer " + token).body(response);
     }
+
 
 
 
