@@ -116,10 +116,9 @@ public class AuthenticationController {
         System.out.println("Generated token: " + token);
 
         ApiResponse response = new ApiResponse("Login successful");
+        System.out.println(ResponseEntity.ok().header("Authorization", "Bearer " + token).body(response));
         return ResponseEntity.ok().header("Authorization", "Bearer " + token).body(response);
     }
-
-
 
 
     @GetMapping("/logout")
