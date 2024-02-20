@@ -122,7 +122,7 @@ public class AuthenticationController {
 
 
     @GetMapping("/logout")
-    public ResponseEntity<ApiResponse> logout(HttpServletRequest request){
+    public ResponseEntity<ApiResponse> logout(HttpServletRequest request) {
         request.getSession().invalidate();
         ApiResponse response = new ApiResponse("Logout successful");
         return ResponseEntity.ok(response);
