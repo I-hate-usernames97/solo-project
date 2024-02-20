@@ -1,22 +1,28 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import axios from "axios";
+import './index.css'
 
-function Login() {
+function Login({token, setToken, setIsLoggedIn, isLoggedIn}) {
+
+ useEffect(() => {
+    console.log('MyFunctionalComponent mounted or updated.');
+    console.log(isLoggedIn + ' at loggin');
+  });
+
     const [formData, setFormData] = useState({
       username: '',
       password: '',
     });
 
-    const [registrationMessage, setRegistrationMessage] = useState('');
+    const [loginMessage, setloginMessage] = useState('');
 
     const navigate = useNavigate();
 
 
 const handleSubmit = async (e) => {
   e.preventDefault();
-
-  console.log('Form Data:', formData);
 
   try {
     const response = await axios.post(
@@ -26,15 +32,23 @@ const handleSubmit = async (e) => {
         password: formData.password,
       },
       {
-        withCredentials: true,
         headers: {
           'Content-Type': 'application/json',
         },
       }
     );
 
-    console.log('Login successful:', response.data);
-    setRegistrationMessage(response.data);
+    console.log('Login successful:', response);
+
+    // Extract token from headers
+    const authorizationToken = response.headers.authorization;
+
+    // Update state with token and login message
+    setIsLoggedIn(true);
+    setToken(authorizationToken);
+    setloginMessage(response.data.message); // Assuming loginMessage is an object with a 'message' property
+
+        console.log('Token in Login component:', authorizationToken);
 
     // Redirect to the home page
     navigate('/');
@@ -43,11 +57,12 @@ const handleSubmit = async (e) => {
     console.error('Login error:', error);
 
     // Display user-friendly error message to the user
-    setRegistrationMessage(
-      error.response ? error.response.data : 'An error occurred during login'
+    setloginMessage(
+      error.response ? error.response.data.message : 'An error occurred during login'
     );
   }
 };
+
 
 
   const handleChange = (e) => {
@@ -56,8 +71,8 @@ const handleSubmit = async (e) => {
   };
 
   return (
-    <div>
-      <form onSubmit={handleSubmit}>
+    <div className='form-container'>
+      <form className='login-form' onSubmit={handleSubmit}>
         <input
           type="text"
           name="username"
@@ -76,9 +91,11 @@ const handleSubmit = async (e) => {
         <button type="submit">Login</button>
       </form>
 
-      <a href='/register'>dont have an account?</a>
+    <Link to='/register'>Don't have an account?</Link>
 
-      <p>{}</p>
+      <p>{loginMessage}</p>
+
+
     </div>
   )
 }

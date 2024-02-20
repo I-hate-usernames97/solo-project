@@ -1,8 +1,12 @@
 import React from 'react'
 
-function Home() {
+function Home({ token, setToken, isLoggedIn}) {
+  
+  console.log('at home ' +  isLoggedIn)
+
   return (
-    <div>Home</div>
+    
+    <div>hello</div>
   )
 }
 
